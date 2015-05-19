@@ -1,0 +1,17 @@
+---
+title: "README"
+author: "Mamoudou Camara"
+date: "19/05/2015"
+output: html_document
+---
+
+The script **run_analysis.R** must be run in the same directory as well as train folder and test folder.
+And it's does the followsing tasks :
+  - 1. Read the all data from the two folders and merges the training and the test sets to create one data set by using **readFolder ** function which read a folder and transform it into data.frame
+  - 2. Extracts only the measurements on the mean and standard deviation for each measurement.
+  - 3. Uses descriptive activity names to name the activities in the data set
+  - 4. Appropriately labels the data set with descriptive variable names. 
+  - 5. Creates a second, independent tidy data set  with the average of each variable for each activity and each subject. Finally the new dataset in stored **ave_per_activity.csv**
+  
+  
+Note : You can either run directly the run_analysis.R or run CodeBook.Rmd chunk by chunk and they lead to same results

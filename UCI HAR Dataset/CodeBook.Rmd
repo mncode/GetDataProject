@@ -1,0 +1,125 @@
+---
+title: "Code Book"
+author: "Mamoudou Camara"
+date: "19/05/2015"
+output: html_document
+---
+# Course Project 
+All the raw data provided for this analysis is from this [source][1] and  here are the [data and their descriptions ][2]
+ 
+
+## 1 - Extraction and merge of test dataset
+  * For extracting training/testing data have the same structure, they are stored in 561 observations of 15-width double per row. This structure does not satisfy the tidy data principles. Some transformation are needed.
+
+  * To transform an observation (string containing 561 of float, each float is 15 digits) in 561-vectorof float the following function is needed:
+```{r}
+# Convert a string of a 561 of 15-width float to a vector of
+# floats
+obs2vector <- function(obs){
+  temp <- strsplit(obs, " ")
+  temp <- sapply(temp, function(x) as.numeric(x))
+  temp[!is.na(temp)]
+}
+```
+
+  * The next chunk is designed to read data from either train folder or train folder and transform it into a data.frame
+
+```{r}
+#' Read a folder
+readFolder <- function(folder){
+  # Set the names of files to read in the 'folder'
+  snm <- sprintf("%s/subject_%s.txt", folder, folder)
+  Xnm <- sprintf("%s/X_%s.txt", folder, folder)
+  Ynm <- sprintf("%s/y_%s.txt", folder, folder)
+  features <- read.table('features.txt', sep = ' ', stringsAsFactors = FALSE)
+  allnames <- features$V2
+  
+  df <- data.frame()
+  df <- rbind(allnames)
+  df <- df[-1, ]
+  
+  # Read files
+  sub <- read.table(snm, header = FALSE )
+  yd <- read.table(Ynm, header = FALSE)
+  require(readr)
+  xd <- read_fwf(Xnm, fwf_widths(561*16))
+
+  # Convector the readed values to a vector of strings
+  xd$X1 <- as.vector(xd$X1)
+  
+  # Create a matrix to be filled by the transformed
+  mat <- matrix(, ncol = 561, nrow = length(xd$X1))
+  
+  for(i in 1:length(xd$X1)){
+    mat[i, ] = obs2vector(xd$X1[[i]])
+  }
+   
+  # Join the 
+  df <- as.data.frame.matrix(mat)
+  res <- cbind(cbind(df, yd), sub)
+  names(res) <- c(allnames, "labels", "subject")
+  res
+}
+```
+
+  * Having all necessary tools in our disposition we can now extract both training and test data and store them in respectively in **train** and **test**.
+  
+```{r, results='hide'}
+# Test dataset
+test <- readFolder('test')
+# Train dataset
+train <- readFolder('train')
+```
+  * And now, let merge the test dataset and the traing one
+  
+```{r, results='hide'}
+# The merged dataset
+dataset <- rbind(train, test)
+```
+
+## 2 - Extraction of mean and square root of each measurement:
+```{r}
+
+dnames <- names(dataset)
+
+meansAndSds <- sapply(dnames[1 :(561 - 2)], function(x) {
+  c(mean(dataset[,x]), sd(dataset[,x]))
+})
+
+```
+
+
+## 3 - Uses descriptive activity names to name the activities in the data set
+```{r, results='hide'}
+act_names <- read.table('activity_labels.txt', sep = ' ', header = FALSE)
+
+# Give the activity name to the corresponding row
+toActName <- function(actId){
+  act_names[actId,][[2]]
+}
+
+# Change labels of dataset
+dataset$labels = toActName(dataset$labels)
+
+```
+
+
+## 4 - Appropriately labels the data set with descriptive variable names. 
+```{r}
+# Complete the naming 
+names(dataset)[[562]] <- "Activities"
+```
+
+## 5 - From the data set in step 4, creates a second, independent tidy data set with the average of each variable for each activity and each subject. And store it **ave_per_activity.csv**
+```{r}
+agg <- aggregate(. ~ Activities, data= dataset[c(1:562)], mean )
+
+
+# Store the aggregate data, in ave_per_activity.csv
+write_csv(agg, 'ave_per_activity.csv')
+```
+
+  
+[1]: http://archive.ics.uci.edu/ml/datasets/Human+Activity+Recognition+Using+Smartphones 
+[2]: https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip
+
